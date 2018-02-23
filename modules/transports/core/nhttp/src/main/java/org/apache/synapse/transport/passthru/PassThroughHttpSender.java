@@ -356,6 +356,9 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 				
 				if("true".equals(disableChunking) || "true".equals(forceHttp10) ){
 
+				    if (msgContext.getProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH) == null) {
+                        msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH, -2L);
+                    }
 					MessageFormatter formatter =  MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
 					OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
                     long messageSize=0;
@@ -366,6 +369,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 	                    msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH,messageSize);
 	                    overflowBlob.writeTo(out);
                     } catch (IOException e) {
+                        msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH, -1L);
 	                    // TODO Auto-generated catch block
                     	 handleException("IO while building message", e);
                     }

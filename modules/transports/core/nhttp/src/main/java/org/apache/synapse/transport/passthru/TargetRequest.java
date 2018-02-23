@@ -24,6 +24,8 @@ import org.apache.axis2.transport.MessageFormatter;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.util.MessageProcessorSelector;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
@@ -62,6 +64,8 @@ import java.util.TreeMap;
  * This is a class for representing a request to be sent to a target.
  */
 public class TargetRequest {
+    private Log log = LogFactory.getLog(TargetRequest.class);
+
     /** Configuration of the sender */
     private TargetConfiguration targetConfiguration;
     private HttpRoute route;
@@ -141,8 +145,13 @@ public class TargetRequest {
         if(requestMsgCtx.getProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH) != null){
         	contentLength = (Long)requestMsgCtx.getProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH);
         }
-        
-       
+
+        if (contentLength == -2L) {
+            while ((Long)requestMsgCtx.getProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH) == -2L) {
+            }
+            contentLength = (Long)requestMsgCtx.getProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH);
+
+        }
         //fix for  POST_TO_URI
         if(requestMsgCtx.isPropertyTrue(NhttpConstants.POST_TO_URI)){
         	path = url.toString();
@@ -210,7 +219,9 @@ public class TargetRequest {
                     entity.setContentLength(contentLength);
                 } 
             }else{
+                log.info("Content Length is " + contentLength);
              if (contentLength != -1) {
+                 log.info("###############################  "  + contentLength);
                 entity.setChunked(false);
                 entity.setContentLength(contentLength);
             } else {
@@ -332,9 +343,12 @@ public class TargetRequest {
 					RelayUtils.buildMessage(requestMsgCtx);
 					this.hasEntityBody = true;
 					Pipe pipe = (Pipe) requestMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+					log.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@2222");
+					log.info("Before Pipe.................");
 					if (pipe != null) {
 						pipe.attachConsumer(conn);
 						this.connect(pipe);
+                        log.info("Message builder Invoked Checking");
 						if (Boolean.TRUE.equals(requestMsgCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
 							ByteArrayOutputStream out = new ByteArrayOutputStream();
 							MessageFormatter formatter =  MessageProcessorSelector.getMessageFormatter(requestMsgCtx);
@@ -345,6 +359,7 @@ public class TargetRequest {
 						
 							entity.setContentLength(new Long(out.toByteArray().length));
 							entity.setChunked(false);
+                            log.info("Entity content length  " + entity.getContentLength());
 						}
 					}
 					// pipe.setSerializationComplete(true);
